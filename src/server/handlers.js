@@ -1,6 +1,8 @@
 const { readFile } = require('fs');
 const path = require('path');
-
+const getData = require('../database/queries/getData');
+const postData = require('../database/queries/postData');
+const qs = require('qs');
 
 const serverError = (err, response) => {
   response.writeHead(500, 'Content-Type:text/html');
@@ -19,10 +21,46 @@ const homeHandler = response => {
 
 const getCitiesHandler = response => {
   // write your own function that gets data from your database and response with  the result
+	getData((error, result) => {
+		if (error) {
+			return errorHandler(request, response);
+		}
+		console.log('result', result);
+
+		let dynamicData = JSON.stringify(result);
+		response.writeHead(200, {
+			'Content-Type': 'application/json'
+		});
+		response.end(dynamicData);
+	});
 };
+
 
 const postCityHandler = (request,response) => {
   // write your code to get the data from html form, then insert the data into the database
+
+  let body = '';
+	request.on('data', (chunk) => {
+		body += chunk.toString(); 
+		console.log('chunk', body);
+	});
+	request.on('end', () => {
+		const result = qs.parse(body);
+		console.log(
+			'city_name',
+			result.city_name,
+			'country',
+			result.country
+		);
+		postData(result, (err) => {
+			console.log('err', err);
+			
+      console.log('result', result);
+      response.end(JSON.stringify(result));
+		});
+		// response.writeHead(302, { Location: '/' });
+		response.end(JSON.stringify(result));
+	});
 };
 
 const publicHandler = (url, response) => {
